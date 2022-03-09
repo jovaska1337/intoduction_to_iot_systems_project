@@ -185,10 +185,6 @@ def bat_clean(bat_iface, net_iface):
     cmd("batctl -m {} interface destroy".format(bat_iface))
     cmd("modprobe -r batman-adv")
 
-# wait for B.A.T.M.A.N. links
-def bat_wait(s):
-    pass
-
 # activate modem
 # returns (modem_index, sim_index, network_interface, dhclient_pid, error)
 def modem_init(subnet_iface):
@@ -307,7 +303,6 @@ def modem_init(subnet_iface):
 
     return (modem, sim, net_iface, dhclient_pid, \
         [dhclient_cfg, dhclient_lea], False)
-
 
 # deactivate modem
 def modem_clean(modem, sim, net_iface, dhclient_pid, files):
@@ -690,7 +685,7 @@ def dhcp_clean(pid, files):
                 pass
 
 # extract and delete a line from bytesarray()
-def line(buf):
+def line_read(buf):
     out = None
 
     i = 0
@@ -768,7 +763,7 @@ def udp_echo(net_iface):
                     # read from stdin
                     send += os.read(fd, 1)
 
-                    tmp = line(send)
+                    tmp = line_read(send)
                     if tmp:
                         #print("LOCAL: '{}'".format(str(tmp, "utf-8")))
                         s.sendto(tmp + b"\n", ("255.255.255.255", 1337))
@@ -781,7 +776,7 @@ def udp_echo(net_iface):
                     recv += tmp[0]
 
                     # attempt to find a line
-                    tmp = line(recv)
+                    tmp = line_read(recv)
                     if tmp:
                         print("REMOTE ({}): {}" \
                             .format(addr, str(tmp, "utf-8")))
@@ -1078,7 +1073,6 @@ def main():
     # wait for links
     print("Waiting {} seconds for B.A.T.M.A.N. links..." \
         .format(LINK_WAIT), file=sys.stderr)
-    #bat_wait(LINK_WAIT)
     time.sleep(LINK_WAIT)
 
     # detect DHCP servers. for some bizarre reason, it takes

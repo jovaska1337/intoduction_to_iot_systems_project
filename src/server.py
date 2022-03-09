@@ -196,7 +196,7 @@ def main():
                         if line == None:
                             continue
 
-                        # discard uses input if operation is in progress
+                        # discard user input if operation is in progress
                         if in_progress:
                             continue
                        
