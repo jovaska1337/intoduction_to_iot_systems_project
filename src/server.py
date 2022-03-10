@@ -7,8 +7,6 @@ import time
 import struct
 import socket
 import select
-import ctypes
-import threading
 
 # types of packets sent between
 # a node and the control server
@@ -132,7 +130,7 @@ def main():
         while not sys.stdin.closed:
             if print_menu:
                 if menu == 0:
-                    print("Remote node control:")
+                    print("\nRemote node control:")
                     print("1) Node status")
                     print("2) Node control")
                     print("0) Exit")
@@ -140,7 +138,7 @@ def main():
                     print(last_line, flush=True, end="")
 
                 elif menu == 1:
-                    print("Select node:")
+                    print("\nSelect node:")
                     i = 1
                     for fd in clients:
                         client = clients[fd]

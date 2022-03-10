@@ -257,10 +257,12 @@ def modem_init(subnet_iface):
         return (modem, sim, net_iface, None, None, True)
 
     # init commands:
-    # 1. unlock sim
-    # 2. activate modem
-    # 3. put the interface up
-    if cmd("mmcli --sim={} --pin={}".format(sim, "0000")) \
+    # 1. unblock wwan
+    # 2. unlock sim
+    # 3. activate modem
+    # 4. put the interface up
+    if cmd("rfkill unblock wwan") \
+        or cmd("mmcli --sim={} --pin={}".format(sim, "0000")) \
         or cmd("mmcli --modem={} --simple-connect apn=internet".format(modem)) \
         or cmd("ip link set up dev {}".format(net_iface)): \
         return (modem, sim, net_iface, None, None, True)
@@ -930,7 +932,7 @@ def client_main():
                     print("poll(): socket error", file=sys.stderr)
                     raise KeyboardInterrupt()
 
-                # data in
+                # msg in
                 if mask & select.POLLIN:
                     # read from socket
                     data = s.recv(4096)
@@ -1026,6 +1028,21 @@ def client_main():
 
     # close socket
     s.close()
+
+def iface_addr(iface):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # get interface address with ioctl()
+    # the offsets and constants here are
+    # from the relevant structs that are
+    # defined in kernel headers
+    addr = int_to_addr(struct.unpack("!I", \
+        (fcntl.ioctl(s, 0x8915, struct.pack("256s", \
+            bytes(iface, "utf-8")))[20:24]))[0])
+
+    s.close()
+
+    return addr
 
 def main():
     # how long to wait for links
@@ -1129,6 +1146,10 @@ def main():
     print("Waiting for internet connectivity...", file=sys.stderr)
     while inet_check("server.ovaska.inet"):
         time.sleep(5)
+    
+    print("Node initialized successfully:", file=sys.stderr)
+    print("  Address: {}".format(iface_addr(BAT_IFACE)), file=sys.stderr)
+    print("  Mode   : {}".format(mode), file=sys.stderr)
 
     # simple udp broadcast echo server loop (for testing)
     #udp_echo(BAT_IFACE)
@@ -1136,11 +1157,12 @@ def main():
     # restart client on errors
     while 1:
         try:
+            print("Starting client...", file=sys.stderr)
             client_main()
             break
         except Exception as e:
             print("client_main(): Exception '{}', " \
-                "restarting in 5 seconds.".format(e))
+                "restarting in 5 seconds.".format(e), file=sys.stderr)
             time.sleep(5)
 
     return 0

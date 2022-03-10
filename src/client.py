@@ -1,6 +1,5 @@
 #!/bin/env python
 
-import os
 import sys
 import enum
 import time
